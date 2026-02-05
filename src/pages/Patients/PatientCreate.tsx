@@ -1,14 +1,13 @@
+// src/pages/patients/PatientCreate.tsx
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import PageMeta from "../../components/common/PageMeta";
-
-
 import ComponentCard from "../../components/common/ComponentCard";
-import Input from "../../components/form/input/InputField";
 import Label from "../../components/form/Label";
+import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
-import DatePicker from "../../components/form/date-picker"; // 👈 AJUSTA si tu archivo es date-picker.tsx
+import DatePicker from "../../components/form/date-picker";
 
 import { createPatient } from "../../services/patients";
 
@@ -37,6 +36,10 @@ function toNullIfEmpty(v: string) {
   return s === "" ? null : s;
 }
 
+// Clases TailAdmin (las mismas que usa tu InputField para estado "normal")
+const baseInputClass =
+  "h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800";
+
 export default function PatientCreate() {
   const nav = useNavigate();
 
@@ -53,17 +56,14 @@ export default function PatientCreate() {
     canal: "",
   });
 
-  const [touched, setTouched] = useState<Partial<Record<keyof FormState, boolean>>>(
-    {}
-  );
+  const [touched, setTouched] = useState<
+    Partial<Record<keyof FormState, boolean>>
+  >({});
   const [loading, setLoading] = useState(false);
   const [errGeneral, setErrGeneral] = useState<string | null>(null);
 
-  const set = (k: keyof FormState, v: string) =>
-    setForm((s) => ({ ...s, [k]: v }));
-
-  const markTouched = (k: keyof FormState) =>
-    setTouched((t) => ({ ...t, [k]: true }));
+  const set = (k: keyof FormState, v: string) => setForm((s) => ({ ...s, [k]: v }));
+  const markTouched = (k: keyof FormState) => setTouched((t) => ({ ...t, [k]: true }));
 
   const errors: FormErrors = useMemo(() => {
     const e: FormErrors = {};
@@ -91,7 +91,6 @@ export default function PatientCreate() {
 
     // Fecha (opcional). Si viene, valida formato + no futuro.
     if (form.fecha_nacimiento) {
-      // Esperamos "YYYY-MM-DD"
       if (!/^\d{4}-\d{2}-\d{2}$/.test(form.fecha_nacimiento)) {
         e.fecha_nacimiento = "Fecha inválida.";
       } else {
@@ -168,10 +167,11 @@ export default function PatientCreate() {
 
       <ComponentCard title="Nuevo paciente">
         <form onSubmit={onSubmit} className="space-y-4 max-w-2xl">
-          {/* Cédula */}
+          {/* Cédula (usa input nativo por inputMode/maxLength/onBlur) */}
           <div>
             <Label>Cédula</Label>
-            <Input
+            <input
+              className={baseInputClass}
               value={form.identificacion}
               inputMode="numeric"
               maxLength={10}
@@ -182,15 +182,18 @@ export default function PatientCreate() {
               }
             />
             {touched.identificacion && errors.identificacion && (
-              <div className="mt-1 text-xs text-red-600">{errors.identificacion}</div>
+              <div className="mt-1 text-xs text-red-600">
+                {errors.identificacion}
+              </div>
             )}
           </div>
 
-          {/* Nombres / Apellidos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Nombres / Apellidos (usa input nativo por required/onBlur) */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label>Nombres *</Label>
-              <Input
+              <input
+                className={baseInputClass}
                 value={form.nombres}
                 onBlur={() => markTouched("nombres")}
                 onChange={(e) => set("nombres", e.target.value)}
@@ -203,22 +206,24 @@ export default function PatientCreate() {
 
             <div>
               <Label>Apellidos *</Label>
-              <Input
+              <input
+                className={baseInputClass}
                 value={form.apellidos}
                 onBlur={() => markTouched("apellidos")}
                 onChange={(e) => set("apellidos", e.target.value)}
                 required
               />
               {touched.apellidos && errors.apellidos && (
-                <div className="mt-1 text-xs text-red-600">{errors.apellidos}</div>
+                <div className="mt-1 text-xs text-red-600">
+                  {errors.apellidos}
+                </div>
               )}
             </div>
           </div>
 
-          {/* DatePicker TailAdmin / Celular */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* DatePicker / Celular */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              {/* Este DatePicker ya trae label interno */}
               <DatePicker
                 id="fecha_nacimiento"
                 label="Fecha de nacimiento"
@@ -228,12 +233,13 @@ export default function PatientCreate() {
                   markTouched("fecha_nacimiento");
                 }}
               />
-              {/* error debajo */}
+
               {touched.fecha_nacimiento && errors.fecha_nacimiento && (
-                <div className="mt-1 text-xs text-red-600">{errors.fecha_nacimiento}</div>
+                <div className="mt-1 text-xs text-red-600">
+                  {errors.fecha_nacimiento}
+                </div>
               )}
 
-              {/* si quieres mostrar el valor seleccionado: */}
               {form.fecha_nacimiento && (
                 <div className="mt-1 text-xs text-gray-500">
                   Seleccionado: {form.fecha_nacimiento}
@@ -243,7 +249,8 @@ export default function PatientCreate() {
 
             <div>
               <Label>Celular</Label>
-              <Input
+              <input
+                className={baseInputClass}
                 value={form.celular}
                 inputMode="numeric"
                 maxLength={10}
@@ -259,8 +266,8 @@ export default function PatientCreate() {
             </div>
           </div>
 
-          {/* Sector / Actividad */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Sector / Actividad (puede seguir con tu InputField sin props extra) */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label>Sector</Label>
               <Input

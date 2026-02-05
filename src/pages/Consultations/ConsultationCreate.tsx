@@ -337,31 +337,34 @@ export default function ConsultationCreate() {
               />
             </div>
 
-            <div>
-              <Label>Valor por sesión (opcional)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="numeric"
-                value={valorSesion}
-                onChange={(e) => setValorSesion(e.target.value)}
-                placeholder="Ej: 20"
-              />
-            </div>
+         <div>
+  <Label>Valor por sesión (opcional)</Label>
+  <input
+    type="number"
+    min={0}
+    step={0.01}
+    inputMode="decimal"
+    value={valorSesion}
+    onChange={(e) => setValorSesion(e.target.value)}
+    placeholder="Ej: 20"
+    className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+  />
+</div>
 
-            <div>
-              <Label>Valor paquete (opcional)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="numeric"
-                value={valorPaquete}
-                onChange={(e) => setValorPaquete(e.target.value)}
-                placeholder="Ej: 250"
-              />
-            </div>
+<div>
+  <Label>Valor paquete (opcional)</Label>
+  <input
+    type="number"
+    min={0}
+    step={0.01}
+    inputMode="decimal"
+    value={valorPaquete}
+    onChange={(e) => setValorPaquete(e.target.value)}
+    placeholder="Ej: 250"
+    className="h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+  />
+</div>
+
           </div>
 
           {/* Zonas */}

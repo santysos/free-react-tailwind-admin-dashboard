@@ -10,13 +10,16 @@ import Button from "../../components/ui/button/Button";
 
 import { createTherapist } from "../../services/therapists";
 
+// ---------------- Utils ----------------
 function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 
+// ---------------- Component ----------------
 export default function TherapistCreate() {
   const navigate = useNavigate();
 
+  // Form state
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -25,9 +28,11 @@ export default function TherapistCreate() {
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
 
+  // UI state
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
+  // ---------------- Submit ----------------
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr("");
@@ -39,12 +44,17 @@ export default function TherapistCreate() {
 
     try {
       setSaving(true);
+
       await createTherapist({
         name: name.trim(),
         email: email.trim(),
-        telefono: telefono.trim() ? telefono.trim() : null,
-        activo,
         password: password.trim(),
+
+        // ✅ ahora el service lo acepta
+        activo,
+
+        // ✅ solo se envía si existe
+        ...(telefono.trim() ? { telefono: telefono.trim() } : {}),
       });
 
       navigate("/therapists", { replace: true });
@@ -55,6 +65,7 @@ export default function TherapistCreate() {
     }
   }
 
+  // ---------------- UI ----------------
   return (
     <>
       <PageMeta title="Nuevo terapista | Fisio" description="Crear terapista" />
@@ -69,36 +80,64 @@ export default function TherapistCreate() {
 
           <div>
             <Label>Nombre *</Label>
-            <Input value={name} onChange={(e) => setName((e.target as HTMLInputElement).value)} placeholder="Ej: Ana López" />
+            <Input
+              value={name}
+              onChange={(e) => setName((e.target as HTMLInputElement).value)}
+              placeholder="Ej: Ana López"
+            />
           </div>
 
           <div>
             <Label>Email *</Label>
-            <Input value={email} onChange={(e) => setEmail((e.target as HTMLInputElement).value)} placeholder="ana@clinica.com" />
+            <Input
+              value={email}
+              onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
+              placeholder="ana@clinica.com"
+            />
           </div>
 
           <div>
             <Label>Teléfono (opcional)</Label>
-            <Input value={telefono} onChange={(e) => setTelefono((e.target as HTMLInputElement).value)} placeholder="0999999999" />
+            <Input
+              value={telefono}
+              onChange={(e) => setTelefono((e.target as HTMLInputElement).value)}
+              placeholder="0999999999"
+            />
           </div>
 
           <div className="flex items-center gap-3">
-            <input type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Usuario activo</span>
+            <input
+              type="checkbox"
+              checked={activo}
+              onChange={(e) => setActivo(e.target.checked)}
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Usuario activo
+            </span>
           </div>
 
           <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-            <div className="text-sm font-semibold text-gray-900 dark:text-white">Credenciales</div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+              Credenciales
+            </div>
 
             <div className="mt-3 grid grid-cols-1 gap-3">
               <div>
                 <Label>Contraseña *</Label>
-                <Input type="password" value={password} onChange={(e) => setPassword((e.target as HTMLInputElement).value)} />
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
+                />
               </div>
 
               <div>
                 <Label>Confirmar contraseña *</Label>
-                <Input type="password" value={password2} onChange={(e) => setPassword2((e.target as HTMLInputElement).value)} />
+                <Input
+                  type="password"
+                  value={password2}
+                  onChange={(e) => setPassword2((e.target as HTMLInputElement).value)}
+                />
               </div>
             </div>
           </div>

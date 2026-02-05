@@ -1,44 +1,112 @@
 import { useEffect, useRef, useState } from "react";
-
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { useSidebar } from "../context/SidebarContext";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
-import NotificationDropdown from "../components/header/NotificationDropdown";
 import UserDropdown from "../components/header/UserDropdown";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+function getToken() {
+  return localStorage.getItem("token") || "";
+}
+
+// 🔎 Buscar pacientes (por cédula/nombre) usando tu backend: /api/patients?q=
+async function searchPatients(q: string) {
+  const token = getToken();
+
+  const resp = await fetch(
+    `${API_BASE}/api/patients?q=${encodeURIComponent(q)}`,
+    {
+      headers: {
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    }
+  );
+
+  const text = await resp.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
-
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const navigate = useNavigate();
+
+  const toggleApplicationMenu = () => setApplicationMenuOpen(!isApplicationMenuOpen);
 
   const handleToggle = () => {
-    if (window.innerWidth >= 1024) {
-      toggleSidebar();
-    } else {
-      toggleMobileSidebar();
-    }
+    if (window.innerWidth >= 1024) toggleSidebar();
+    else toggleMobileSidebar();
   };
 
-  const toggleApplicationMenu = () => {
-    setApplicationMenuOpen(!isApplicationMenuOpen);
-  };
-
+  // 🔎 Search state
   const inputRef = useRef<HTMLInputElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<any[]>([]);
 
+  // ⌘K / Ctrl+K → focus
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         inputRef.current?.focus();
+        setOpen(true);
       }
+      if (event.key === "Escape") setOpen(false);
     };
 
     document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // Click afuera → cerrar dropdown
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      const el = e.target as HTMLElement;
+      if (!boxRef.current) return;
+      if (!boxRef.current.contains(el)) setOpen(false);
+    };
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, []);
+
+  // Debounce búsqueda
+  useEffect(() => {
+    const term = q.trim();
+    if (!term) {
+      setResults([]);
+      setOpen(false);
+      return;
+    }
+
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data = await searchPatients(term);
+        const items = Array.isArray(data?.data) ? data.data : [];
+        setResults(items);
+        setOpen(true);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(t);
+  }, [q]);
+
+  const onSelectPatient = (p: any) => {
+    setOpen(false);
+    setQ("");
+    navigate(`/patients/${p.id}`);
+  };
 
   return (
     <header className="sticky top-0 flex w-full bg-white border-gray-200 z-99999 dark:border-gray-800 dark:bg-gray-900 lg:border-b">
@@ -50,13 +118,7 @@ const AppHeader: React.FC = () => {
             aria-label="Toggle Sidebar"
           >
             {isMobileOpen ? (
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -65,13 +127,7 @@ const AppHeader: React.FC = () => {
                 />
               </svg>
             ) : (
-              <svg
-                width="16"
-                height="12"
-                viewBox="0 0 16 12"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -80,33 +136,18 @@ const AppHeader: React.FC = () => {
                 />
               </svg>
             )}
-            {/* Cross Icon */}
           </button>
 
           <Link to="/" className="lg:hidden">
-            <img
-              className="dark:hidden"
-              src="./images/logo/logo.svg"
-              alt="Logo"
-            />
-            <img
-              className="hidden dark:block"
-              src="./images/logo/logo-dark.svg"
-              alt="Logo"
-            />
+            <img className="dark:hidden" src="./images/logo/logo.svg" alt="Logo" />
+            <img className="hidden dark:block" src="./images/logo/logo-dark.svg" alt="Logo" />
           </Link>
 
           <button
             onClick={toggleApplicationMenu}
             className="flex items-center justify-center w-10 h-10 text-gray-700 rounded-lg z-99999 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 lg:hidden"
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -116,8 +157,9 @@ const AppHeader: React.FC = () => {
             </svg>
           </button>
 
-          <div className="hidden lg:block">
-            <form>
+          {/* 🔎 Buscador solo en desktop */}
+          <div className="hidden lg:block" ref={boxRef}>
+            <form onSubmit={(e) => e.preventDefault()}>
               <div className="relative">
                 <span className="absolute -translate-y-1/2 pointer-events-none left-4 top-1/2">
                   <svg
@@ -136,34 +178,83 @@ const AppHeader: React.FC = () => {
                     />
                   </svg>
                 </span>
+
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Search or type command..."
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  onFocus={() => q.trim() && setOpen(true)}
+                  inputMode="numeric"
+                  placeholder="Buscar paciente por cédula..."
                   className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[430px]"
                 />
 
-                <button className="absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-[7px] py-[4.5px] text-xs -tracking-[0.2px] text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
-                  <span> ⌘ </span>
-                  <span> K </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    inputRef.current?.focus();
+                    setOpen(true);
+                  }}
+                  className="absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-[7px] py-[4.5px] text-xs -tracking-[0.2px] text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400"
+                  title="Buscar (⌘K / Ctrl+K)"
+                >
+                  <span>⌘</span>
+                  <span>K</span>
                 </button>
+
+                {/* Dropdown resultados */}
+                {open && (
+                  <div className="absolute z-50 mt-2 w-full rounded-xl border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-800 dark:bg-gray-900 xl:w-[430px]">
+                    {loading && (
+                      <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                        Buscando...
+                      </div>
+                    )}
+
+                    {!loading && results.length === 0 && q.trim() !== "" && (
+                      <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                        No hay resultados.
+                      </div>
+                    )}
+
+                    {!loading &&
+                      results.slice(0, 8).map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => onSelectPatient(p)}
+                          className="w-full text-left flex items-center justify-between rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                        >
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {p.nombres} {p.apellidos}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Cédula: {p.identificacion || "—"} · Cel:{" "}
+                              {p.celular || "—"}
+                            </div>
+                          </div>
+                          <span className="text-xs text-brand-600 dark:text-brand-400">
+                            Ver
+                          </span>
+                        </button>
+                      ))}
+                  </div>
+                )}
               </div>
             </form>
           </div>
         </div>
+
         <div
           className={`${
             isApplicationMenuOpen ? "flex" : "hidden"
           } items-center justify-between w-full gap-4 px-5 py-4 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
         >
           <div className="flex items-center gap-2 2xsm:gap-3">
-            {/* <!-- Dark Mode Toggler --> */}
             <ThemeToggleButton />
-            {/* <!-- Dark Mode Toggler --> */}
-            <NotificationDropdown />
-            {/* <!-- Notification Menu Area --> */}
           </div>
-          {/* <!-- User Area --> */}
           <UserDropdown />
         </div>
       </div>

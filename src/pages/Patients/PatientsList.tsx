@@ -6,6 +6,30 @@ import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
 import { listPatients } from "../../services/patients";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+function getToken() {
+  return localStorage.getItem("token") || "";
+}
+
+async function authMe() {
+  const token = getToken();
+
+  const resp = await fetch(`${API_BASE}/api/auth/me`, {
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  const text = await resp.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 function money(v: any) {
   if (v === null || v === undefined || v === "") return "—";
   const n = Number(v);
@@ -13,7 +37,6 @@ function money(v: any) {
 }
 
 function pickLastConsultation(p: any) {
-  // Soporta distintos nombres según tu API
   return (
     p?.ultima_consulta ||
     p?.last_consultation ||
@@ -26,16 +49,26 @@ function pickLastConsultation(p: any) {
 export default function PatientsList() {
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<any[]>([]);
+  const [me, setMe] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  const roles: string[] = me?.user?.roles || [];
+  const isAdmin = roles.includes("admin");
 
   async function load() {
     setLoading(true);
     try {
-      const data = await listPatients({ q });
-      const items = Array.isArray(data?.data)
-        ? data.data
-        : data?.patients || [];
+      const [patientsRes, meRes] = await Promise.all([
+        listPatients({ q }),
+        authMe(),
+      ]);
+
+      const items = Array.isArray(patientsRes?.data)
+        ? patientsRes.data
+        : patientsRes?.patients || [];
+
       setRows(items);
+      setMe(meRes);
     } finally {
       setLoading(false);
     }
@@ -83,7 +116,7 @@ export default function PatientsList() {
               {rows.map((p) => {
                 const c = pickLastConsultation(p);
 
-                // pagos
+                // pagos (solo admin los verá)
                 const abonado =
                   c?.total_abonado ?? c?.abonado ?? c?.totalAbonado ?? null;
                 const saldo = c?.saldo ?? null;
@@ -113,41 +146,43 @@ export default function PatientsList() {
                     </td>
 
                     <td>{p.celular || "—"}</td>
+
                     <td>
                       {c ? (
                         <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span
-                              className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium
-                         border-gray-200 text-gray-700 bg-white
-                         dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
-                            >
-                              Abono:{" "}
-                              <span className="ml-1 font-semibold">
-                                {money(abonado)}
+                          {/* ✅ Abono + Saldo SOLO ADMIN */}
+                          {isAdmin && (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium
+                                border-gray-200 text-gray-700 bg-white
+                                dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+                              >
+                                Abono:{" "}
+                                <span className="ml-1 font-semibold">
+                                  {money(abonado)}
+                                </span>
                               </span>
-                            </span>
 
-                            <span
-                              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium
-                          dark:border-gray-800 ${
-                            (saldo ?? 0) <= 0
-                              ? "border-success-200 bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400"
-                              : "border-warning-200 bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-300"
-                          }`}
-                            >
-                              Saldo:{" "}
-                              <span className="ml-1 font-semibold">
-                                {money(saldo)}
+                              <span
+                                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium
+                                dark:border-gray-800 ${
+                                  (saldo ?? 0) <= 0
+                                    ? "border-success-200 bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400"
+                                    : "border-warning-200 bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-300"
+                                }`}
+                              >
+                                Saldo:{" "}
+                                <span className="ml-1 font-semibold">
+                                  {money(saldo)}
+                                </span>
                               </span>
-                            </span>
-                          </div>
+                            </div>
+                          )}
 
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                             Última consulta:{" "}
-                            <span className="font-medium">
-                              {c.fecha ?? "—"}
-                            </span>
+                            <span className="font-medium">{c.fecha ?? "—"}</span>
                           </div>
                         </div>
                       ) : (
@@ -176,7 +211,6 @@ export default function PatientsList() {
                             </span>
                           </div>
 
-                          {/* mini barra visual */}
                           {typeof realizadas === "number" &&
                             typeof total === "number" &&
                             total > 0 && (
@@ -184,7 +218,10 @@ export default function PatientsList() {
                                 <div
                                   className="h-full bg-brand-500"
                                   style={{
-                                    width: `${Math.min(100, (realizadas / total) * 100)}%`,
+                                    width: `${Math.min(
+                                      100,
+                                      (realizadas / total) * 100
+                                    )}%`,
                                   }}
                                 />
                               </div>

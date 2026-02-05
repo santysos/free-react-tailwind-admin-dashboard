@@ -152,7 +152,7 @@ export default function PatientEdit() {
                 <Input
                   value={form.nombres}
                   onChange={(e) => set("nombres", e.target.value)}
-                  required
+                  
                 />
               </div>
               <div>
@@ -160,7 +160,6 @@ export default function PatientEdit() {
                 <Input
                   value={form.apellidos}
                   onChange={(e) => set("apellidos", e.target.value)}
-                  required
                 />
               </div>
             </div>

@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Users, UserPlus } from "lucide-react";
+
 
 import {
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
-  CalenderIcon,
-  UserCircleIcon,
 } from "../icons";
 
 import { useSidebar } from "../context/SidebarContext";
@@ -28,31 +28,19 @@ const navItems: NavItem[] = [
     path: "/",
   },
   {
-    icon: <UserCircleIcon />,
+    icon: <Users />,
     name: "Pacientes",
     path: "/patients",
   },
 
-  // ✅ NUEVO: Terapistas
-  {
-    icon: <UserCircleIcon />,
-    name: "Terapistas",
-    path: "/therapists",
-  },
-
-  {
-    icon: <CalenderIcon />,
-    name: "Agenda",
-    path: "/calendar",
-  },
 ];
 
 
 const othersItems: NavItem[] = [
   {
-    icon: <UserCircleIcon />,
-    name: "Perfil",
-    path: "/profile",
+    icon: <UserPlus />,
+    name: "Terapistas",
+    path: "/therapists",
   },
 ];
 
