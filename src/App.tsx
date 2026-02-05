@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import SignIn from "./pages/AuthPages/SignIn";
-import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
 import Videos from "./pages/UiElements/Videos";
@@ -33,15 +32,25 @@ import TherapistsList from "./pages/Therapists/TherapistsList";
 import TherapistCreate from "./pages/Therapists/TherapistCreate";
 import TherapistEdit from "./pages/Therapists/TherapistEdit";
 
-
+// ✅ IMPORTANTE: agregar esto
+import RequireAuth from "./components/auth/RequireAuth";
 
 export default function App() {
   return (
     <Router>
       <ScrollToTop />
       <Routes>
-        {/* Dashboard Layout */}
-        <Route element={<AppLayout />}>
+        {/* ✅ Rutas públicas (Auth) */}
+        <Route path="/signin" element={<SignIn />} />
+
+        {/* ✅ Todo lo privado va protegido */}
+        <Route
+          element={
+            <RequireAuth>
+              <AppLayout />
+            </RequireAuth>
+          }
+        >
           <Route index path="/" element={<Home />} />
 
           {/* Others Page */}
@@ -71,32 +80,23 @@ export default function App() {
 
           {/* Consultations */}
           <Route path="/consultations/new" element={<ConsultationCreate />} />
-          {/* Alias opcional */}
           <Route path="/consultations/create" element={<ConsultationCreate />} />
           <Route path="/consultations/:id/edit" element={<ConsultationEdit />} />
 
-                    {/* Therapists */}
+          {/* Therapists */}
           <Route path="/therapists" element={<TherapistsList />} />
           <Route path="/therapists/new" element={<TherapistCreate />} />
           <Route path="/therapists/:id/edit" element={<TherapistEdit />} />
 
-
-
           {/* Sessions */}
           <Route path="/sessions/new" element={<SessionCreate />} />
-          {/* Alias opcional */}
           <Route path="/sessions/create" element={<SessionCreate />} />
           <Route path="/sessions/:id/edit" element={<SessionEdit />} />
-
 
           {/* Charts */}
           <Route path="/line-chart" element={<LineChart />} />
           <Route path="/bar-chart" element={<BarChart />} />
         </Route>
-
-        {/* Auth Layout */}
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
 
         {/* Fallback Route */}
         <Route path="*" element={<NotFound />} />
